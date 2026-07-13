@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Home, Dumbbell, History as HistoryIcon, TrendingUp, Plus, Check, X, Trophy,
   Flame, Target, ChevronRight, Quote, UtensilsCrossed, Camera,
-  Coffee, Apple, Edit3, Calendar, Award, ChevronDown
+  Coffee, Apple, Edit3, Calendar, Award, ChevronDown,
+  Sunrise, Salad, Zap, Moon, Pill
 } from 'lucide-react';
 
 // ============================================================================
@@ -141,7 +142,56 @@ const MACRO_COLORS = {
   kcal:    { hex: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500' },
 };
 
-const DAILY_TARGET = { kcal: 2300, protein: 138, carbs: 220, fat: 70 };
+const DAILY_TARGET = { kcal: 2300, protein: 138, carbs: 220, fat: 70, fiber: 30 };
+
+// Macro identity — label, emoji, colour, visual scale, and what it does (for the legend)
+const MACRO_META = [
+  { key: 'protein', label: 'Protein', emoji: '💪', tc: 'text-blue-400',  bar: 'bg-blue-500',  hex: '#3b82f6', vmax: 45, does: 'builds & repairs muscle' },
+  { key: 'carbs',   label: 'Carbs',   emoji: '⚡', tc: 'text-amber-400', bar: 'bg-amber-500', hex: '#f59e0b', vmax: 75, does: 'fuels your training' },
+  { key: 'fat',     label: 'Fat',     emoji: '🥑', tc: 'text-rose-400',  bar: 'bg-rose-500',  hex: '#f43f5e', vmax: 30, does: 'hormones & absorption' },
+  { key: 'fiber',   label: 'Fiber',   emoji: '🌿', tc: 'text-lime-400',  bar: 'bg-lime-500',  hex: '#84cc16', vmax: 14, does: 'digestion & fullness' },
+];
+
+// ============================================================================
+// MY DAILY BLUEPRINT — the finalized everyday diet (built from what Umang eats)
+// ============================================================================
+
+const DIET_ACCENT = {
+  amber:   { text: 'text-amber-400',   bg: 'bg-amber-500',   border: 'border-amber-500/50',   soft: 'bg-amber-500/10' },
+  emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500', border: 'border-emerald-500/50', soft: 'bg-emerald-500/10' },
+  lime:    { text: 'text-lime-400',    bg: 'bg-lime-500',    border: 'border-lime-500/50',    soft: 'bg-lime-500/10' },
+  blue:    { text: 'text-blue-400',    bg: 'bg-blue-500',    border: 'border-blue-500/50',    soft: 'bg-blue-500/10' },
+  rose:    { text: 'text-rose-400',    bg: 'bg-rose-500',    border: 'border-rose-500/50',    soft: 'bg-rose-500/10' },
+  violet:  { text: 'text-violet-400',  bg: 'bg-violet-500',  border: 'border-violet-500/50',  soft: 'bg-violet-500/10' },
+  zinc:    { text: 'text-zinc-400',    bg: 'bg-zinc-600',    border: 'border-zinc-700',       soft: 'bg-zinc-800/40' },
+};
+const DIET_ICONS = { sunrise: Sunrise, lunch: UtensilsCrossed, salad: Salad, zap: Zap, dumbbell: Dumbbell, moon: Moon, pill: Pill };
+
+const MY_DAY = [
+  { time: '8:00 AM', tag: 'BREAKFAST', emoji: '🍳', icon: 'sunrise', accent: 'amber',
+    items: ['🥣 Yogabar Dark Chocolate protein oats · 40g in 200ml milk', '🥚 3 whole eggs', '🍌 1 banana', '🥜 1 tbsp Pintola Dark Chocolate peanut butter'],
+    note: 'Black coffee AFTER food — never on empty stomach.', kcal: 700, protein: 40, carbs: 68, fat: 27, fiber: 9 },
+  { time: '1:00 PM', tag: 'LUNCH', emoji: '🍛', icon: 'lunch', accent: 'emerald',
+    items: ['🫓 3 roti', '🥣 1 katori dal', '🍳 1 egg curry (single egg)', '🥗 Cucumber + salad'],
+    note: 'Dal + egg keep protein high without paneer here.', kcal: 630, protein: 26, carbs: 72, fat: 15, fiber: 10 },
+  { time: '4:30 PM', tag: 'SNACK', emoji: '🥗', icon: 'salad', accent: 'lime',
+    items: ['🌱 50g soya chunks (boiled, masala + lemon)', '🍵 1 cup green tea'],
+    note: 'The biggest protein rock of your day. Never skip it.', kcal: 200, protein: 26, carbs: 15, fat: 3, fiber: 6 },
+  { time: '5:30 PM', tag: 'PRE-GYM', emoji: '⚡', icon: 'zap', accent: 'blue',
+    items: ['🍌 1 banana', '🥔 1 boiled potato', '☕ 1 cold coffee'],
+    note: 'Clean fast carbs before lifting — real training fuel.', kcal: 350, protein: 8, carbs: 72, fat: 4, fiber: 6 },
+  { time: '8:30 PM', tag: 'POST-GYM', emoji: '🏋️', icon: 'dumbbell', accent: 'rose',
+    items: ['🧀 100g paneer', '🥚 2 whole eggs'],
+    note: 'Add 1 scoop whey here on training days (see stack below).', kcal: 460, protein: 30, carbs: 6, fat: 22, fiber: 1 },
+  { time: '10:30 PM', tag: 'PRE-BED · OPTIONAL', emoji: '🌙', icon: 'moon', accent: 'zinc', optional: true,
+    items: ['🥛 250ml warm milk + pinch turmeric'],
+    note: 'Only if protein fell short. Skip if acidity flares.', kcal: 150, protein: 8, carbs: 12, fat: 5, fiber: 0 },
+];
+
+const MY_DAY_SUPPLEMENTS = [
+  { name: 'Avvatar Isorich Whey', sub: 'Belgian Chocolate · isolate', dose: '1 scoop in water · post-gym', macro: '+28g protein · +120 kcal', accent: 'blue' },
+  { name: 'BeastLife Creatine', sub: 'Monohydrate · 319g', dose: '5g every day · in the shake', macro: '0 kcal · take on rest days too', accent: 'violet' },
+];
 
 // Standard meals — reused across days with tweaks
 const M = {
@@ -283,6 +333,14 @@ const GROCERY_LIST = [
   ]},
   { category: 'Pantry (monthly, amortized)', items: [
     { name: 'Toor dal, moong dal, atta, rice, ghee, oil, masalas', price: 150 },
+  ]},
+  { category: 'Breakfast add-ons (amortized weekly)', items: [
+    { name: 'Yogabar Dark Chocolate protein oats', price: 150 },
+    { name: 'Pintola Dark Chocolate peanut butter (natural)', price: 120 },
+  ]},
+  { category: 'Supplements (amortized weekly)', items: [
+    { name: 'Whey isolate · Avvatar Isorich (1 scoop/day)', price: 1050 },
+    { name: 'Creatine · BeastLife Monohydrate 319g (5g/day)', price: 160 },
   ]},
 ];
 
@@ -486,7 +544,7 @@ export default function App() {
   const openProgram = (pid) => { setActiveProgramId(pid); setTab('workout'); };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-20" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex justify-center" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
         .font-mono-num { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
@@ -502,6 +560,7 @@ export default function App() {
         .slide-up { animation: slide-up 0.3s ease-out forwards; }
       `}</style>
 
+      <div className="w-full max-w-md min-h-screen pb-24 border-x border-zinc-900/80">
       {tab === 'dashboard' && <Dashboard state={state} openProgram={openProgram} setTab={setTab} />}
       {tab === 'workout' && (
         <Workout
@@ -518,6 +577,7 @@ export default function App() {
       {tab === 'progress' && (
         <Progress state={state} onAddMeasurement={addMeasurement} onMarkPhoto={markPhotoDone} />
       )}
+      </div>
 
       <BottomNav tab={tab} setTab={setTab} />
     </div>
@@ -1050,19 +1110,7 @@ function ExerciseCard({ index, exercise, state, isDone, isEditing, onEdit, onUpd
 // ============================================================================
 
 function Fuel({ state }) {
-  const [activeDay, setActiveDay] = useState(getDayKey());
   const [showGrocery, setShowGrocery] = useState(false);
-
-  const dayPlan = MEAL_PLAN[activeDay];
-  const dayMeals = dayPlan.meals;
-  const dayTotals = dayMeals.reduce((acc, m) => ({
-    kcal: acc.kcal + m.kcal,
-    protein: acc.protein + m.protein,
-    carbs: acc.carbs + m.carbs,
-    fat: acc.fat + m.fat,
-  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 });
-
-  const tagColor = dayPlan.tagColor ? getMuscleColor(dayPlan.tagColor) : null;
 
   return (
     <div className="px-5 pt-6 pb-6">
@@ -1082,59 +1130,8 @@ function Fuel({ state }) {
         </h1>
       </div>
 
-      {/* Day selector */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
-        {Object.keys(MEAL_PLAN).map(dk => {
-          const p = MEAL_PLAN[dk];
-          const isActive = activeDay === dk;
-          const isToday = dk === getDayKey();
-          return (
-            <button key={dk} onClick={() => setActiveDay(dk)}
-              className={`relative py-2 px-1 border transition ${
-                isActive
-                  ? 'bg-blue-500 text-zinc-950 border-blue-500'
-                  : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-400'
-              }`}>
-              {isToday && !isActive && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full"></div>}
-              <span className="block text-[10px] font-mono-num font-bold">{dk.toUpperCase()}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Day header */}
-      <div className="mb-4 bg-zinc-900/40 border border-zinc-800 px-4 py-3 stripe-bg">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-xl font-black uppercase tracking-tight">{dayPlan.dayLabel}</h2>
-          {tagColor ? (
-            <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 border ${tagColor.bgSoft} ${tagColor.text} ${tagColor.borderSoft}`}>
-              {dayPlan.sessionTag}
-            </span>
-          ) : (
-            <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 border bg-zinc-800/40 text-zinc-500 border-zinc-700">
-              {dayPlan.sessionTag}
-            </span>
-          )}
-        </div>
-        {dayPlan.note && <p className="text-[11px] text-zinc-500 italic">{dayPlan.note}</p>}
-      </div>
-
-      {/* Day macro totals */}
-      <div className="grid grid-cols-4 gap-1.5 mb-5">
-        <MacroBox label="Kcal" value={dayTotals.kcal} target={DAILY_TARGET.kcal} color="kcal" />
-        <MacroBox label="Protein" value={dayTotals.protein} target={DAILY_TARGET.protein} color="protein" unit="g" />
-        <MacroBox label="Carbs" value={dayTotals.carbs} target={DAILY_TARGET.carbs} color="carbs" unit="g" />
-        <MacroBox label="Fat" value={dayTotals.fat} target={DAILY_TARGET.fat} color="fat" unit="g" />
-      </div>
-
-      {/* Meals */}
-      <div className="space-y-3 mb-6">
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-[10px] font-mono-num text-emerald-500">01</span>
-          <h2 className="text-base font-bold uppercase tracking-wider">Meals</h2>
-        </div>
-        {dayMeals.map((meal, i) => <MealCard key={i} meal={meal} index={i + 1} />)}
-      </div>
+      {/* My daily blueprint */}
+      <DailyBlueprint />
 
       {/* Grocery list */}
       <div className="mb-5">
@@ -1180,7 +1177,7 @@ function Fuel({ state }) {
       {/* Diet rules */}
       <div>
         <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-[10px] font-mono-num text-emerald-500">03</span>
+          <span className="text-[10px] font-mono-num text-emerald-500">✓</span>
           <h2 className="text-base font-bold uppercase tracking-wider">Rules That Matter</h2>
         </div>
         <div className="space-y-1.5">
@@ -1211,6 +1208,175 @@ function MacroBox({ label, value, target, color, unit }) {
       <p className="text-[8px] font-mono-num text-zinc-600">/{target}{unit || ''}</p>
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-800">
         <div className={`h-full ${c.bg}`} style={{ width: `${pct}%` }}></div>
+      </div>
+    </div>
+  );
+}
+
+function DailyBlueprint() {
+  const T = DAILY_TARGET;
+  const tot = MY_DAY.reduce((a, m) => ({
+    kcal: a.kcal + m.kcal, protein: a.protein + m.protein, carbs: a.carbs + m.carbs, fat: a.fat + m.fat, fiber: a.fiber + (m.fiber || 0),
+  }), { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+
+  const R = 34, CIRC = 2 * Math.PI * R;
+
+  // donut arcs = protein / carbs / fat share of calories
+  const cals = [tot.protein * 4, tot.carbs * 4, tot.fat * 9];
+  const calSum = cals.reduce((a, b) => a + b, 0) || 1;
+  const hexes = ['#3b82f6', '#f59e0b', '#f43f5e'];
+  let acc = 0;
+  const arcs = cals.map((c, i) => {
+    const len = (c / calSum) * CIRC;
+    const arc = { len, offset: -acc, hex: hexes[i] };
+    acc += len;
+    return arc;
+  });
+
+  return (
+    <div className="mb-6">
+      {/* Hero dashboard */}
+      <div className="relative border border-zinc-800 bg-zinc-900/40 grid-bg overflow-hidden mb-3">
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-2 w-2 bg-emerald-500"></div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-400 font-bold">Today's Fuel</p>
+            <span className="text-[9px] font-mono-num text-zinc-600 ml-auto uppercase tracking-widest">Everyday · Recomp</span>
+          </div>
+
+          <div className="flex items-center gap-5">
+            {/* Calorie donut — arcs = protein/carbs/fat calorie split */}
+            <div className="relative flex-shrink-0" style={{ width: 96, height: 96 }}>
+              <svg width="96" height="96" className="-rotate-90">
+                <circle cx="48" cy="48" r={R} fill="none" stroke="#27272a" strokeWidth="9" />
+                {arcs.map((s, i) => (
+                  <circle key={i} cx="48" cy="48" r={R} fill="none" stroke={s.hex} strokeWidth="9"
+                    strokeDasharray={`${s.len} ${CIRC - s.len}`} strokeDashoffset={s.offset} />
+                ))}
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-black font-mono-num text-emerald-400 leading-none">{tot.kcal}</span>
+                <span className="text-[9px] font-mono-num text-zinc-500 uppercase tracking-[0.2em] mt-0.5">kcal</span>
+              </div>
+            </div>
+
+            {/* Four labeled macro bars */}
+            <div className="flex-1 min-w-0 space-y-2.5">
+              {MACRO_META.map((mm) => {
+                const val = tot[mm.key], tgt = T[mm.key];
+                const pct = Math.min(100, (val / tgt) * 100);
+                return (
+                  <div key={mm.key}>
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="text-[12px] font-bold uppercase tracking-wide text-zinc-200">
+                        <span className="mr-1">{mm.emoji}</span>{mm.label}
+                      </span>
+                      <span className="text-[11px] font-mono-num text-zinc-500">
+                        <span className={`font-bold ${mm.tc}`}>{val}</span>/{tgt}g
+                      </span>
+                    </div>
+                    <div className="h-2.5 bg-zinc-800 overflow-hidden rounded-sm">
+                      <div className={`h-full ${mm.bar}`} style={{ width: `${pct}%` }}></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Legend — what each macro does */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 pt-3.5 border-t border-zinc-800">
+            {MACRO_META.map((mm) => (
+              <div key={mm.key} className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 ${mm.bar} flex-shrink-0 rounded-sm`}></span>
+                <span className="text-[11px] text-zinc-400"><span className="font-bold text-zinc-200">{mm.label}</span> · {mm.does}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="relative">
+        {/* vertical rail */}
+        <div className="absolute left-[15px] top-2 bottom-2 w-px bg-zinc-800"></div>
+        <div className="space-y-3.5">
+          {MY_DAY.map((m, i) => {
+            const a = DIET_ACCENT[m.accent];
+            const Icon = DIET_ICONS[m.icon] || UtensilsCrossed;
+            return (
+              <div key={i} className="relative pl-10">
+                {/* node */}
+                <div className={`absolute left-0 top-1.5 z-10 p-1.5 border ${a.border} ${a.soft} bg-zinc-950`}>
+                  <Icon className={`w-3.5 h-3.5 ${a.text}`} />
+                </div>
+                <div className={`border-l-2 ${a.border} bg-zinc-900/40 ${m.optional ? 'opacity-75' : ''}`}>
+                  <div className="px-4 py-3.5">
+                    <div className="flex items-start justify-between mb-2.5">
+                      <div>
+                        <span className="text-[11px] font-mono-num font-bold text-zinc-500">{m.time}</span>
+                        <h4 className={`text-base font-black uppercase tracking-wide ${a.text} leading-tight`}>{m.tag}</h4>
+                      </div>
+                      <div className="flex items-baseline gap-1 flex-shrink-0 ml-2">
+                        <span className="text-2xl font-black font-mono-num text-emerald-400 leading-none">{m.kcal}</span>
+                        <span className="text-[9px] text-zinc-500 uppercase">kcal</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {m.items.map((it, j) => (
+                        <li key={j} className="text-[13px] text-zinc-200 leading-snug flex gap-1.5">
+                          <span className="text-zinc-600 flex-shrink-0">·</span><span>{it}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {m.note && <p className="text-[12px] italic text-zinc-500 mt-2.5">{m.note}</p>}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-3.5 pt-3 border-t border-zinc-800/60">
+                      {MACRO_META.map((mm) => {
+                        const g = m[mm.key] || 0;
+                        const pct = Math.min(100, (g / mm.vmax) * 100);
+                        return (
+                          <div key={mm.key} className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase tracking-wide text-zinc-400 w-12 flex-shrink-0">{mm.label}</span>
+                            <div className="flex-1 h-2 bg-zinc-800 overflow-hidden rounded-sm">
+                              <div className={`h-full ${mm.bar}`} style={{ width: `${pct}%` }}></div>
+                            </div>
+                            <span className={`text-[11px] font-mono-num font-bold ${mm.tc} w-8 text-right flex-shrink-0`}>{g}g</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Supplement stack band */}
+      <div className="mt-4">
+        <div className="flex items-baseline gap-2 mb-2">
+          <Pill className="w-3.5 h-3.5 text-violet-400" />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Supplement Stack</h3>
+          <span className="text-[9px] font-mono-num text-zinc-600 ml-auto uppercase tracking-widest">Flexible · take whenever</span>
+        </div>
+        <div className="grid grid-cols-1 gap-2">
+          {MY_DAY_SUPPLEMENTS.map((s, i) => {
+            const a = DIET_ACCENT[s.accent];
+            return (
+              <div key={i} className={`border-l-2 ${a.border} bg-zinc-900/40 px-3.5 py-2.5`}>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <h4 className={`text-sm font-bold uppercase tracking-wide ${a.text} leading-tight`}>{s.name}</h4>
+                    <p className="text-[10px] text-zinc-500">{s.sub}</p>
+                  </div>
+                  <span className="text-[9px] font-mono-num text-zinc-500 text-right flex-shrink-0 ml-2">{s.macro}</span>
+                </div>
+                <p className="text-[11px] font-bold text-emerald-300 mt-1">{s.dose}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
