@@ -193,6 +193,39 @@ const MY_DAY_SUPPLEMENTS = [
   { name: 'BeastLife Creatine', sub: 'Monohydrate · 319g', dose: '5g every day · in the shake', macro: '0 kcal · take on rest days too', accent: 'violet' },
 ];
 
+// Pure-veg (egg-free) version for Shrawan / August — 6 eggs swapped for paneer bhurji,
+// chana, and a daily whey scoop. Same 138g protein target, lands ~148g.
+const MY_DAY_VEG = [
+  { time: '8:00 AM', tag: 'BREAKFAST', emoji: '🍳', icon: 'sunrise', accent: 'amber',
+    items: ['🥣 Yogabar Dark Chocolate protein oats · 40g in 200ml milk', '🧀 100g paneer bhurji (onion-tomato masala)', '🍌 1 banana', '🥜 1 tbsp Pintola Dark Chocolate peanut butter'],
+    note: 'Black coffee AFTER food — never on empty stomach.', kcal: 745, protein: 40, carbs: 66, fat: 32, fiber: 9 },
+  { time: '1:00 PM', tag: 'LUNCH', emoji: '🍛', icon: 'lunch', accent: 'emerald',
+    items: ['🫓 3 roti', '🥣 1 katori dal', '🥣 1 katori chana / rajma', '🥗 Cucumber + salad'],
+    note: 'Dal + chana keep protein high, no egg needed.', kcal: 660, protein: 28, carbs: 80, fat: 15, fiber: 13 },
+  { time: '4:30 PM', tag: 'SNACK', emoji: '🥗', icon: 'salad', accent: 'lime',
+    items: ['🌱 50g soya chunks (boiled, masala + lemon)', '🍵 1 cup green tea'],
+    note: 'The biggest protein rock of your day. Never skip it.', kcal: 200, protein: 26, carbs: 15, fat: 3, fiber: 6 },
+  { time: '5:30 PM', tag: 'PRE-GYM', emoji: '⚡', icon: 'zap', accent: 'blue',
+    items: ['🍌 1 banana', '🥔 1 boiled potato', '☕ 1 cold coffee + 5g creatine'],
+    note: 'Clean fast carbs before lifting — stir the creatine into the coffee.', kcal: 350, protein: 8, carbs: 72, fat: 4, fiber: 6 },
+  { time: '8:30 PM', tag: 'POST-GYM', emoji: '🏋️', icon: 'dumbbell', accent: 'rose',
+    items: ['🧀 100g paneer', '🥤 1 scoop whey (Avvatar Isorich)'],
+    note: 'Whey replaces the eggs this month — take it daily.', kcal: 385, protein: 46, carbs: 5, fat: 20, fiber: 1 },
+  { time: '10:30 PM', tag: 'PRE-BED · OPTIONAL', emoji: '🌙', icon: 'moon', accent: 'zinc', optional: true,
+    items: ['🥛 250ml warm milk + pinch turmeric'],
+    note: 'Only if protein fell short. Skip if acidity flares.', kcal: 150, protein: 8, carbs: 12, fat: 5, fiber: 0 },
+];
+
+const SUPPS_VEG = [
+  { name: 'Avvatar Isorich Whey', sub: 'Belgian Chocolate · isolate', dose: '1 scoop · daily (post-gym or breakfast)', macro: '+28g protein · +120 kcal', accent: 'blue' },
+  { name: 'BeastLife Creatine', sub: 'Monohydrate · 319g', dose: '5g every day · in the shake', macro: '0 kcal · take on rest days too', accent: 'violet' },
+];
+
+const DIETS = {
+  veg:  { label: 'Pure Veg',  sub: 'Shrawan · Aug', day: MY_DAY_VEG, supplements: SUPPS_VEG },
+  eggs: { label: 'With Eggs', sub: 'Standard',      day: MY_DAY,     supplements: MY_DAY_SUPPLEMENTS },
+};
+
 // Standard meals — reused across days with tweaks
 const M = {
   preWorkout: {
@@ -1111,6 +1144,8 @@ function ExerciseCard({ index, exercise, state, isDone, isEditing, onEdit, onUpd
 
 function Fuel({ state }) {
   const [showGrocery, setShowGrocery] = useState(false);
+  const [diet, setDiet] = useState(() => localStorage.getItem('fuel_diet') || 'veg');
+  useEffect(() => { localStorage.setItem('fuel_diet', diet); }, [diet]);
 
   return (
     <div className="px-5 pt-6 pb-6">
@@ -1130,8 +1165,22 @@ function Fuel({ state }) {
         </h1>
       </div>
 
+      {/* Diet toggle — Pure Veg (Shrawan) / With Eggs */}
+      <div className="grid grid-cols-2 gap-0 mb-4 border border-zinc-800 bg-zinc-900/40">
+        {Object.entries(DIETS).map(([key, d]) => {
+          const active = diet === key;
+          return (
+            <button key={key} onClick={() => setDiet(key)}
+              className={`px-3 py-2.5 text-left transition ${active ? 'bg-emerald-500/10 border-b-2 border-emerald-500' : 'border-b-2 border-transparent hover:bg-zinc-800/40'}`}>
+              <p className={`text-sm font-bold uppercase tracking-wide ${active ? 'text-emerald-300' : 'text-zinc-400'}`}>{d.label}</p>
+              <p className="text-[10px] font-mono-num text-zinc-500 uppercase tracking-widest">{d.sub}</p>
+            </button>
+          );
+        })}
+      </div>
+
       {/* My daily blueprint */}
-      <DailyBlueprint />
+      <DailyBlueprint day={DIETS[diet].day} supplements={DIETS[diet].supplements} />
 
       {/* Grocery list */}
       <div className="mb-5">
@@ -1213,9 +1262,9 @@ function MacroBox({ label, value, target, color, unit }) {
   );
 }
 
-function DailyBlueprint() {
+function DailyBlueprint({ day = MY_DAY, supplements = MY_DAY_SUPPLEMENTS }) {
   const T = DAILY_TARGET;
-  const tot = MY_DAY.reduce((a, m) => ({
+  const tot = day.reduce((a, m) => ({
     kcal: a.kcal + m.kcal, protein: a.protein + m.protein, carbs: a.carbs + m.carbs, fat: a.fat + m.fat, fiber: a.fiber + (m.fiber || 0),
   }), { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
@@ -1301,7 +1350,7 @@ function DailyBlueprint() {
         {/* vertical rail */}
         <div className="absolute left-[15px] top-2 bottom-2 w-px bg-zinc-800"></div>
         <div className="space-y-3.5">
-          {MY_DAY.map((m, i) => {
+          {day.map((m, i) => {
             const a = DIET_ACCENT[m.accent];
             const Icon = DIET_ICONS[m.icon] || UtensilsCrossed;
             return (
@@ -1361,7 +1410,7 @@ function DailyBlueprint() {
           <span className="text-[9px] font-mono-num text-zinc-600 ml-auto uppercase tracking-widest">Flexible · take whenever</span>
         </div>
         <div className="grid grid-cols-1 gap-2">
-          {MY_DAY_SUPPLEMENTS.map((s, i) => {
+          {supplements.map((s, i) => {
             const a = DIET_ACCENT[s.accent];
             return (
               <div key={i} className={`border-l-2 ${a.border} bg-zinc-900/40 px-3.5 py-2.5`}>
